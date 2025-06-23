@@ -5,7 +5,7 @@
   ...
 }:
 rustPlatform.buildRustPackage rec {
-  name = "mdq";
+  name = "sim";
   version = "0.1.0";
   nativeBuildInputs = [
     cargo
