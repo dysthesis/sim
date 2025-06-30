@@ -10,5 +10,7 @@ pkgs.mkShell {
     cargo
     rustToolchains.nightly
     bacon
+    cargo-flamegraph
+    gnuplot
   ];
 }
