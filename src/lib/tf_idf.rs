@@ -92,7 +92,7 @@ impl From<Df> for Idf {
             .map
             .into_iter()
             .map(|(term, df)| {
-                let idf = ((value.num_docs as Score + 1.0) / (df as f64 + 1.0)).ln() + 1.0;
+                let idf = ((value.num_docs as Score + 1.0) / (df + 1.0)).ln() + 1.0;
                 (term, idf)
             })
             .collect();
@@ -103,7 +103,7 @@ impl From<Df> for Idf {
 impl Idf {
     #[inline]
     pub fn get(&self, string: String) -> Option<Score> {
-        self.0.get(&Term(string)).map(|val| val.clone())
+        self.0.get(&Term(string)).map(|val| val.to_owned())
     }
 }
 
@@ -121,7 +121,7 @@ impl From<&[&str]> for TfIdf {
             .map(|doc| {
                 let tf = Tf::from(doc.to_owned());
                 tf.get_map()
-                    .into_iter()
+                    .iter()
                     .filter_map(|(term, tf)| {
                         idf.get(term.clone().into()).map(|idf| (term, tf * idf))
                     })
