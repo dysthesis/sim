@@ -1,9 +1,7 @@
 use std::{env, fs, path::PathBuf, process};
 
-use crate::{cosine::Cosine, tf_idf::TfIdf};
+use libsim::{cosine::Cosine, tf_idf::TfIdf};
 
-mod cosine;
-mod tf_idf;
 fn main() {
     // Parse CLI arguments
     let args: Vec<String> = env::args().collect();
