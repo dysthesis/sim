@@ -1,8 +1,6 @@
 use std::{collections::HashMap, hash::Hash};
 
-use rayon::iter::{
-    IntoParallelIterator, IntoParallelRefIterator, ParallelBridge, ParallelIterator,
-};
+use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
 type Score = f64;
 
@@ -28,19 +26,14 @@ pub struct Tf<'a>(HashMap<Term<'a>, Score>);
 impl<'a> From<&'a str> for Tf<'a> {
     fn from(value: &'a str) -> Self {
         let terms = Term::from(value);
-        let tf = terms
-            .par_bridge()
-            .fold(
-                HashMap::new,
-                |mut frequencies: HashMap<Term, Score>, term| {
-                    *frequencies.entry(term.clone()).or_default() += 1 as Score;
-                    frequencies
-                },
-            )
-            .reduce(HashMap::new, |mut a, b| {
-                a.extend(b);
-                a
-            });
+        let (lower, _upper) = terms.size_hint();
+        let tf = terms.fold(
+            HashMap::with_capacity(lower),
+            |mut frequencies: HashMap<Term, Score>, term| {
+                *frequencies.entry(term).or_default() += 1 as Score;
+                frequencies
+            },
+        );
         Self(tf)
     }
 }
