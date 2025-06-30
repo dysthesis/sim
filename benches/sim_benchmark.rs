@@ -31,14 +31,10 @@ fn sim_benchmark(c: &mut Criterion) {
         b.iter(|| black_box(Tf::from(doc1.as_str())))
     });
     c.bench_function("Document factor", |b| {
-        b.iter(|| black_box(Df::from([doc1.as_str(), doc2.as_str()].as_slice())))
+        b.iter(|| black_box(Df::from(corpus_slice)))
     });
     c.bench_function("Inverse document factor", |b| {
-        b.iter(|| {
-            black_box(Idf::from(Df::from(
-                [doc1.as_str(), doc2.as_str()].as_slice(),
-            )))
-        })
+        b.iter(|| black_box(Idf::from(Df::from(corpus_slice))))
     });
 }
 

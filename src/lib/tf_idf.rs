@@ -1,34 +1,35 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, hash::Hash};
 
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use rayon::iter::{
+    IntoParallelIterator, IntoParallelRefIterator, ParallelBridge, ParallelIterator,
+};
 
 type Score = f64;
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
-pub struct Term(String);
-impl Term {
-    pub fn from(string: &str) -> Vec<Self> {
-        let sanitised: String = string
-            .chars()
-            .map(|c| if c.is_alphabetic() { c } else { ' ' })
-            .collect();
-        sanitised
-            .split_whitespace()
-            .map(|t| Self(t.to_string()))
-            .collect()
+pub struct Term<'a>(&'a str);
+impl<'a> Term<'a> {
+    pub fn from(string: &'a str) -> impl Iterator<Item = Term<'a>> {
+        string
+            .split(|c: char| !c.is_alphabetic())
+            .filter(|s| !s.is_empty())
+            .map(Self)
     }
 }
-impl From<Term> for String {
-    fn from(Term(value): Term) -> Self {
-        value
+
+impl<'a> Term<'a> {
+    pub fn borrow(self) -> &'a str {
+        let Term(str) = self;
+        str
     }
 }
-pub struct Tf(HashMap<Term, Score>);
-impl From<&str> for Tf {
-    fn from(value: &str) -> Self {
+
+pub struct Tf<'a>(HashMap<Term<'a>, Score>);
+impl<'a> From<&'a str> for Tf<'a> {
+    fn from(value: &'a str) -> Self {
         let terms = Term::from(value);
         let tf = terms
-            .par_iter()
+            .par_bridge()
             .fold(
                 HashMap::new,
                 |mut frequencies: HashMap<Term, Score>, term| {
@@ -44,24 +45,28 @@ impl From<&str> for Tf {
     }
 }
 
-impl Tf {
+impl<'a> Tf<'a> {
     #[inline]
-    pub fn get(&self, string: String) -> Option<Score> {
+    pub fn get(&self, string: &'a str) -> Option<Score> {
         self.0.get(&Term(string)).cloned()
     }
     #[inline]
-    pub fn get_map(&self) -> &HashMap<Term, Score> {
+    pub fn borrow_map(&self) -> &HashMap<Term<'a>, Score> {
         &self.0
+    }
+    #[inline]
+    pub fn get_map(self) -> HashMap<Term<'a>, Score> {
+        self.0
     }
 }
 
-pub struct Df {
-    map: HashMap<Term, Score>,
+pub struct Df<'a> {
+    map: HashMap<Term<'a>, Score>,
     num_docs: usize,
 }
 
-impl From<&[&str]> for Df {
-    fn from(value: &[&str]) -> Self {
+impl<'a> From<&'a [&'a str]> for Df<'a> {
+    fn from(value: &[&'a str]) -> Self {
         let num_docs = value.len();
         let map = value
             .par_iter()
@@ -71,23 +76,19 @@ impl From<&[&str]> for Df {
                 for term in unique_terms {
                     *df.entry(term).or_default() += 1 as Score;
                 }
-                let res = df.iter().map(|(k, v)| (k.clone(), *v)).collect();
-                res
+                df.iter().map(|(k, v)| (k.clone(), *v)).collect()
             })
-            .reduce(
-                || HashMap::new(),
-                |mut a, b| {
-                    a.extend(b);
-                    a
-                },
-            );
+            .reduce(HashMap::new, |mut a, b| {
+                a.extend(b);
+                a
+            });
         Df { map, num_docs }
     }
 }
 
-pub struct Idf(HashMap<Term, Score>);
-impl From<Df> for Idf {
-    fn from(value: Df) -> Self {
+pub struct Idf<'a>(HashMap<Term<'a>, Score>);
+impl<'a> From<Df<'a>> for Idf<'a> {
+    fn from(value: Df<'a>) -> Self {
         let res = value
             .map
             .into_iter()
@@ -100,31 +101,27 @@ impl From<Df> for Idf {
     }
 }
 
-impl Idf {
-    #[inline]
-    pub fn get(&self, string: String) -> Option<Score> {
-        self.0.get(&Term(string)).map(|val| val.to_owned())
+impl<'a> Idf<'a> {
+    pub fn get(&self, term: &Term<'a>) -> Option<Score> {
+        self.0.get(term).copied()
     }
 }
-
-pub struct TfIdf(Vec<HashMap<Term, Score>>);
-impl TfIdf {
-    pub fn get(&self) -> &Vec<HashMap<Term, Score>> {
+pub struct TfIdf<'a>(Vec<HashMap<Term<'a>, Score>>);
+impl<'a> TfIdf<'a> {
+    pub fn get(&self) -> &Vec<HashMap<Term<'a>, Score>> {
         &self.0
     }
 }
-impl From<&[&str]> for TfIdf {
-    fn from(value: &[&str]) -> Self {
-        let idf: Idf = Df::from(value).into();
-        let res = value
+impl<'a> From<&[&'a str]> for TfIdf<'a> {
+    fn from(corpus: &[&'a str]) -> Self {
+        let idf: Idf = Df::from(corpus).into();
+        let res = corpus
             .par_iter()
             .map(|doc| {
-                let tf = Tf::from(doc.to_owned());
-                tf.get_map()
-                    .iter()
-                    .filter_map(|(term, tf)| {
-                        idf.get(term.clone().into()).map(|idf| (term, tf * idf))
-                    })
+                Tf::from(*doc)
+                    .get_map()
+                    .into_par_iter()
+                    .filter_map(|(term, tf_w)| idf.get(&term).map(|idf_w| (term, tf_w * idf_w)))
                     .map(|(k, v)| (k.clone(), v))
                     .collect::<HashMap<_, _>>()
             })
