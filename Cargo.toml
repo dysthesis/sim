@@ -8,7 +8,8 @@ name = "libsim"
 path = "src/lib/mod.rs"
 
 [dependencies]
-rayon = "1.10.0"
+rayon = {version = "1.10.0", default-features = false}
+dhat = {version = "0.3.3", optional = true}
 
 [dev-dependencies]
 criterion = "0.6.0"
@@ -25,3 +26,11 @@ lto = true
 opt-level = "z"
 codegen-units = 1
 panic = "abort"
+
+[profile.debug-release]
+inherits = "release"
+debug = 1
+
+[features]
+dhat-heap = ["dep:dhat"]
+dhat-ad-hoc = ["dep:dhat"]

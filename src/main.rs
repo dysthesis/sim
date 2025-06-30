@@ -2,7 +2,15 @@ use std::{env, fs, path::PathBuf, process};
 
 use libsim::{cosine::Cosine, tf_idf::TfIdf};
 
+#[cfg(feature = "dhat-heap")]
+#[global_allocator]
+static ALLOC: dhat::Alloc = dhat::Alloc;
+
 fn main() {
+    #[cfg(feature = "dhat-heap")]
+    let _profiler = dhat::Profiler::new_heap();
+    #[cfg(feature = "dhat-ad-hoc")]
+    let _profiler = dhat::Profiler::new_ad_hoc();
     // Parse CLI arguments
     let args: Vec<String> = env::args().collect();
     if args.len() != 3 {
