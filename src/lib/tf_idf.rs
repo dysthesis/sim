@@ -47,7 +47,7 @@ impl From<&str> for Tf {
 impl Tf {
     #[inline]
     pub fn get(&self, string: String) -> Option<Score> {
-        self.0.get(&Term(string)).map(|val| val.clone())
+        self.0.get(&Term(string)).cloned()
     }
     #[inline]
     pub fn get_map(&self) -> &HashMap<Term, Score> {
