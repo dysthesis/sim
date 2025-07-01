@@ -1,6 +1,6 @@
 use std::{env, fs, path::PathBuf, process};
 
-use libsim::{cosine::Cosine, tf_idf::TfIdf};
+use libsim::{cosine::Cosine, similarity, tf_idf::TfIdf};
 
 #[cfg(feature = "dhat-heap")]
 #[global_allocator]
@@ -25,9 +25,7 @@ fn main() {
     let doc1 = doc1.as_str();
     let doc2 = fs::read_to_string(path2).unwrap();
     let doc2 = doc2.as_str();
-    let docs = vec![doc1, doc2];
-    let tf_idf = TfIdf::from(docs.as_slice());
-    let sim = Cosine::from(tf_idf.get().as_slice());
-    let res = sim.get()[0][1];
+
+    let res = similarity(doc1, doc2);
     println!("{res}");
 }
