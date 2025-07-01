@@ -5,6 +5,9 @@ harness = false
 [dependencies]
 rayon = {version = "1.10.0", default-features = false}
 dhat = {version = "0.3.3", optional = true}
+bumpalo = { version = "3.19.0", default-features = false, features = ["collections", "allocator-api2"] }
+hashbrown = { version = "0.15.4", default-features = false, features = ["default-hasher", "allocator-api2"] }
+micromath = { version = "2.1.0", default-features = false }
 
 [dev-dependencies]
 criterion = "0.6.0"
