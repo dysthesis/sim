@@ -1,11 +1,6 @@
-[package]
-name = "sim"
-version = "0.1.0"
-edition = "2024"
-
-[lib]
-name = "libsim"
-path = "src/lib/mod.rs"
+[[bench]]
+name = "sim_benchmark"
+harness = false
 
 [dependencies]
 rayon = {version = "1.10.0", default-features = false}
@@ -16,9 +11,22 @@ criterion = "0.6.0"
 rand_chacha = "0.9.0"
 lipsum = "0.9.1"
 
-[[bench]]
-name = "sim_benchmark"
-harness = false
+[features]
+dhat-heap = ["dep:dhat"]
+dhat-ad-hoc = ["dep:dhat"]
+
+[lib]
+name = "libsim"
+path = "src/lib/mod.rs"
+
+[package]
+name = "sim"
+version = "0.1.0"
+edition = "2024"
+
+[profile.debug-release]
+inherits = "release"
+debug = 1
 
 [profile.release]
 strip = "debuginfo"
@@ -26,11 +34,3 @@ lto = true
 opt-level = "z"
 codegen-units = 1
 panic = "abort"
-
-[profile.debug-release]
-inherits = "release"
-debug = 1
-
-[features]
-dhat-heap = ["dep:dhat"]
-dhat-ad-hoc = ["dep:dhat"]

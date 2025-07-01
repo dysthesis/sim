@@ -1,6 +1,6 @@
 use std::{env, fs, path::PathBuf, process};
 
-use libsim::{cosine::Cosine, similarity, tf_idf::TfIdf};
+use libsim::similarity;
 
 #[cfg(feature = "dhat-heap")]
 #[global_allocator]
