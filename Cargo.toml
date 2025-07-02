@@ -5,6 +5,7 @@ harness = false
 [dependencies]
 rayon = {version = "1.10.0", default-features = false}
 dhat = {version = "0.3.3", optional = true}
+nalgebra = { version = "0.33.2", default-features = false }
 
 [dev-dependencies]
 criterion = "0.6.0"
