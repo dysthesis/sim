@@ -1,5 +1,3 @@
-// In your cosine.rs or a new utils.rs
-
 use std::{collections::HashMap, hash::Hash};
 
 type Score = f64;

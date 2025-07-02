@@ -8,7 +8,7 @@ use libsim::{
 };
 use lipsum::lipsum;
 
-const CORPUS_LEN: usize = 200_000;
+const CORPUS_LEN: usize = 1_000_000;
 
 fn sim_benchmark(c: &mut Criterion) {
     let docs = lipsum(CORPUS_LEN);
