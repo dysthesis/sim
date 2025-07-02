@@ -79,6 +79,22 @@ impl<'a> From<&'a [&'a str]> for Df<'a> {
     }
 }
 
+impl<'a> From<&[Tf<'a>]> for Df<'a> {
+    fn from(value: &[Tf<'a>]) -> Self {
+        let num_docs = value.len();
+        let map = value
+            .iter()
+            .fold(HashMap::new(), |mut acc: HashMap<Term, Score>, curr| {
+                let curr_map = curr.borrow_map();
+                curr_map
+                    .keys()
+                    .for_each(|k| *acc.entry(k.clone()).or_default() += 1 as Score);
+                acc
+            });
+        Self { num_docs, map }
+    }
+}
+
 pub struct Idf<'a>(HashMap<Term<'a>, Score>);
 impl<'a> From<Df<'a>> for Idf<'a> {
     fn from(value: Df<'a>) -> Self {
@@ -107,14 +123,14 @@ impl<'a> TfIdf<'a> {
 }
 impl<'a> From<&[&'a str]> for TfIdf<'a> {
     fn from(corpus: &[&'a str]) -> Self {
-        let idf: Idf = Df::from(corpus).into();
-        let res = corpus
+        let tf: Vec<Tf<'a>> = corpus.par_iter().map(|doc| Tf::from(*doc)).collect();
+        let idf: Idf = Df::from(tf.as_slice()).into();
+        let res = tf
             .par_iter()
-            .map(|doc| {
-                Tf::from(*doc)
-                    .get_map()
+            .map(|val| {
+                val.borrow_map()
                     .into_par_iter()
-                    .filter_map(|(term, tf_w)| idf.get(&term).map(|idf_w| (term, tf_w * idf_w)))
+                    .filter_map(|(term, tf_w)| idf.get(term).map(|idf_w| (term, tf_w * idf_w)))
                     .map(|(k, v)| (k.clone(), v))
                     .collect::<HashMap<_, _>>()
             })
